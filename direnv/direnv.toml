@@ -1,0 +1,6 @@
+[whitelist]
+prefix = ["~/work"]
+ 
+[global]
+hide_env_diff = true
+log_filter = "^export"
