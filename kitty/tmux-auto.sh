@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 
 BASE_SESSION="default"
 CLIENT_SESSION="${BASE_SESSION}-$$"
