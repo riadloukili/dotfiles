@@ -1,3 +1,6 @@
 result
 *.bak*
-.initial_startup_done
+tmux/plugins/*
+!tmux/plugins/tpm
+direnv/lib
+hypr/.initial_startup_done
