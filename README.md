@@ -7,10 +7,9 @@ The NixOS config ships a default for every program it installs. Anything placed 
 | entry | program |
 |---|---|
 | `hypr/` | Hyprland (`hyprland.lua`) |
-| `mango/` | Mango (`config.conf`) |
 | `waybar/` `rofi/` `swaync/` `wlogout/` | Wayland desktop stack |
 | `nvim/` | Neovim (used directly by `nix run nixos-config#nvim`) |
 | `tmux/tmux.conf` | tmux (sourced by the `tmux` wrapper; TPM-compatible elsewhere) |
 | `zsh/p10k.zsh`, `zsh/zshrc.local` | prompt + local zsh extras for the `zsh` wrapper |
 
-Start from a default by copying it out of nixos-config's `modules/*/defaults/<name>` and editing.
+Start from a default by copying it out of nixos-config's `home/defaults/<name>` (or `wrappers/defaults/`) and editing.
