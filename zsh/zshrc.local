@@ -1,0 +1,15 @@
+# Personal zsh extras, sourced by the nix-managed .zshrc after plugins and aliases.
+
+# In a fresh tmux window, greet with a pokemon + fastfetch.
+if [[ $- == *i* && -n "$TMUX" ]]; then
+  if [[ $(tmux list-panes -t "$TMUX_PANE" | wc -l) -eq 1 ]]; then
+    pokemon-colorscripts --no-title -s -r | fastfetch -c "$HOME/.config/fastfetch/config-pokemon.jsonc" --logo-type file-raw --logo-height 10 --logo-width 5 --logo -
+  fi
+fi
+
+alias ls='lsd'
+alias l='ls -l'
+alias la='ls -a'
+alias lla='ls -la'
+alias lt='ls --tree'
+alias v='nvim'
