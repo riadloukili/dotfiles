@@ -3,7 +3,6 @@ result
 tmux/plugins/*
 !tmux/plugins/tpm
 direnv/lib
-cava/shaders/
 zsh/.z*
 zsh/plugins/
 fontconfig/conf.d

@@ -15,8 +15,7 @@ hl.config({
   },
 })
 
--- Qt/cursor env (caelestia's env.lua names its own)
-hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+-- Cursor (caelestia's env.lua sets XCURSOR_* from hypr-vars)
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "24")
 

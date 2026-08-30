@@ -13,5 +13,4 @@ Usable on any machine: clone to `~/personal/dotfiles` and symlink what you need.
 | `nvim/` | Neovim (LazyVim) |
 | `zsh/zshrc.local` | personal zsh extras (sourced by home-manager's zsh) |
 | `starship/` | prompt, with the `$CLOUD_PROVIDER` icon (`STARSHIP_CONFIG` points here) |
-| `bat/` `btop/` `lazygit/` `fastfetch/` `atuin/` `direnv/` `cava/` | CLI tools |
-| `qt5ct/` `qt6ct/` `Kvantum/` `gtk-3.0/` `gtk-4.0/` `nwg-look/` | theming |
+| `bat/` `lazygit/` `fastfetch/` `atuin/` `direnv/` | CLI tools |
