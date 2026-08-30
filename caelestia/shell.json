@@ -6,21 +6,70 @@
   },
   "general": {
     "apps": {
-      "terminal": ["kitty"],
-      "audio": ["pavucontrol"],
-      "playback": ["mpv"],
-      "explorer": ["thunar"]
+      "terminal": [
+        "kitty"
+      ],
+      "audio": [
+        "pavucontrol"
+      ],
+      "playback": [
+        "mpv"
+      ],
+      "explorer": [
+        "thunar"
+      ]
     }
   },
   "utilities": {
     "quickToggles": [
-      { "id": "wifi", "enabled": true },
-      { "id": "bluetooth", "enabled": true },
-      { "id": "mic", "enabled": true },
-      { "id": "settings", "enabled": true },
-      { "id": "gameMode", "enabled": true },
-      { "id": "dnd", "enabled": true },
-      { "id": "vpn", "enabled": true }
+      {
+        "id": "wifi",
+        "enabled": true
+      },
+      {
+        "id": "bluetooth",
+        "enabled": true
+      },
+      {
+        "id": "mic",
+        "enabled": true
+      },
+      {
+        "id": "settings",
+        "enabled": true
+      },
+      {
+        "id": "gameMode",
+        "enabled": true
+      },
+      {
+        "id": "dnd",
+        "enabled": true
+      },
+      {
+        "id": "vpn",
+        "enabled": true
+      }
     ]
+  },
+  "session": {
+    "commands": {
+      "logout": [
+        "uwsm",
+        "stop"
+      ],
+      "shutdown": [
+        "systemctl",
+        "poweroff"
+      ],
+      "hibernate": [
+        "systemctl",
+        "hibernate"
+      ],
+      "reboot": [
+        "systemctl",
+        "reboot"
+      ]
+    }
   }
 }
