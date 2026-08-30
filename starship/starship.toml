@@ -1,94 +1,99 @@
-# Prompt. Left: os · directory · git, then ❯ on its own line.
-# Right: host location (CLOUD_PROVIDER, set per host by nixos-config), exit
-# status, duration, jobs, direnv, toolchains, time.
+# Prompt: os · dir · git on the left, ❯ below; host location icon
+# ($CLOUD_PROVIDER, set per host by nixos-config), status, duration and
+# toolchains on the right. Colours come from the terminal palette, which
+# caelestia re-themes with the wallpaper.
 add_newline = true
-format = """
-[](fg:#3b4252)$os[](fg:#3b4252 bg:#4c566a)$directory[](fg:#4c566a bg:#5e81ac)$git_branch$git_status[](fg:#5e81ac)
-$character"""
-right_format = """
-$custom\
-$status\
-$cmd_duration\
-$jobs\
-$direnv\
-$python\
-$nodejs\
-$golang\
-$rust\
-$nix_shell\
-$time"""
+format = "$os$directory$git_branch$git_status$line_break$character"
+right_format = "${custom.aws}${custom.hetzner}${custom.digitalocean}${custom.home}$status$cmd_duration$jobs$direnv$nix_shell$python$nodejs$golang$rust$time"
 
 [os]
 disabled = false
-style = "bg:#3b4252 fg:#d8dee9"
-format = "[ $symbol ]($style)"
+style = "bold white"
+format = "[$symbol]($style)  "
 
 [os.symbols]
-NixOS = ""
-Arch = ""
-Linux = ""
+NixOS = ""
+Arch = ""
+Debian = ""
+Ubuntu = ""
+Macos = ""
+Linux = ""
 
 [directory]
-style = "bg:#4c566a fg:#eceff4"
-format = "[ $path ]($style)"
+style = "bold blue"
+format = "[$path]($style)[$read_only](red) "
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
-symbol = ""
-style = "bg:#5e81ac fg:#eceff4"
-format = "[ $symbol $branch ]($style)"
+symbol = " "
+style = "bold purple"
+format = "[$symbol$branch]($style) "
 
 [git_status]
-style = "bg:#5e81ac fg:#eceff4"
-format = "[$all_status$ahead_behind ]($style)"
+style = "bold red"
+format = "([$all_status$ahead_behind]($style) )"
 
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 vimcmd_symbol = "[❮](bold green)"
 
-[custom.cloud]
-description = "Where this machine lives"
-when = 'test -n "$CLOUD_PROVIDER"'
-command = '''
-case "$CLOUD_PROVIDER" in
-  aws) printf "" ;;
-  hetzner) printf "" ;;
-  digitalocean) printf "" ;;
-  home) printf "" ;;
-  *) printf "%s" "$CLOUD_PROVIDER" ;;
-esac
-'''
-style = "bold"
+# Host location, same icons/colours as the old p10k segment
+[custom.aws]
+when = '[ "$CLOUD_PROVIDER" = "aws" ]'
+command = "printf ''"
+style = "bold 208"
+format = "[$output]($style) "
+shell = ["sh"]
+
+[custom.hetzner]
+when = '[ "$CLOUD_PROVIDER" = "hetzner" ]'
+command = "printf ''"
+style = "bold red"
+format = "[$output]($style) "
+shell = ["sh"]
+
+[custom.digitalocean]
+when = '[ "$CLOUD_PROVIDER" = "digitalocean" ]'
+command = "printf ''"
+style = "bold 39"
+format = "[$output]($style) "
+shell = ["sh"]
+
+[custom.home]
+when = '[ "$CLOUD_PROVIDER" = "home" ]'
+command = "printf ''"
+style = "bold green"
 format = "[$output]($style) "
 shell = ["sh"]
 
 [status]
 disabled = false
-format = "[$symbol$status]($style) "
+format = "[✘ $status]($style) "
 
 [cmd_duration]
 min_time = 2000
-format = "[$duration](yellow) "
+format = "[ $duration](bold yellow) "
 
 [jobs]
-format = "[$symbol$number](blue) "
+format = "[✦ $number](bold blue) "
 
 [direnv]
 disabled = false
-format = "[$symbol$loaded]($style) "
+format = "[direnv $loaded]($style) "
+
+[nix_shell]
+format = "[ $state]($style) "
 
 [python]
-format = "[${symbol}${version}( \\($virtualenv\\))]($style) "
+format = "[ ${version}( $virtualenv)]($style) "
 [nodejs]
-format = "[$symbol($version)]($style) "
+format = "[ $version]($style) "
 [golang]
-format = "[$symbol($version)]($style) "
+format = "[ $version]($style) "
 [rust]
-format = "[$symbol($version)]($style) "
-[nix_shell]
-format = "[$symbol$state]($style) "
+format = "[ $version]($style) "
 
 [time]
 disabled = false
