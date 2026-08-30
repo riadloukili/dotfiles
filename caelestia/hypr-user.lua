@@ -31,12 +31,11 @@ for i = 1, 10 do
   })
 end
 
--- Session services (caelestia's execs.lua starts the shell and cliphist)
+-- Session services (caelestia's execs.lua starts the shell and cliphist).
+-- Hyprland runs under uwsm (the SDDM default), which imports the env into
+-- systemd and activates graphical-session.target: portals and user services
+-- hang off that.
 hl.on("hyprland.start", function()
-  hl.exec_cmd(
-    "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE"
-      .. " && systemctl --user start hyprland-session.target"
-  )
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
   hl.exec_cmd("shikane")
   hl.exec_cmd("nm-applet --indicator")
