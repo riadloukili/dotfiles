@@ -1,39 +1,15 @@
 #!/usr/bin/env bash
-# /* ---- 💫 https://github.com/JaKooLit 💫 ---- */  ##
-# searchable enabled keybinds using rofi
-
-# kill yad to not interfere with this binds
+# Searchable list of the active keybinds (from hyprctl), via rofi.
 pkill yad || true
+pkill rofi && exit 0
 
-# check if rofi is already running
-if pidof rofi > /dev/null; then
-  pkill rofi
-fi
-
-# define the config files
-keybinds_conf="$HOME/.config/hypr/configs/Keybinds.conf"
-user_keybinds_conf="$HOME/.config/hypr/UserConfigs/UserKeybinds.conf"
-laptop_conf="$HOME/.config/hypr/UserConfigs/Laptops.conf"
-rofi_theme="$HOME/.config/rofi/config-keybinds.rasi"
-msg='☣️ NOTE ☣️: Clicking with Mouse or Pressing ENTER will have NO function'
-
-# combine the contents of the keybinds files and filter for keybinds
-keybinds=$(cat "$keybinds_conf" "$user_keybinds_conf" | grep -E '^bind')
-
-# check if laptop.conf exists and add its keybinds if present
-if [[ -f "$laptop_conf" ]]; then
-    laptop_binds=$(grep -E '^bind' "$laptop_conf")
-    keybinds+=$'\n'"$laptop_binds"
-fi
-
-# check for any keybinds to display
-if [[ -z "$keybinds" ]]; then
-    echo "no keybinds found."
-    exit 1
-fi
-
-# replace $mainmod with super in the displayed keybinds for rofi
-display_keybinds=$(echo "$keybinds" | sed 's/\$mainMod/SUPER/g')
-
-# use rofi to display the keybinds with the modified content
-echo "$display_keybinds" | rofi -dmenu -i -config "$rofi_theme" -mesg "$msg"
+hyprctl binds -j | jq -r '
+  def mods: [ (if .modmask % 2 >= 1 then "SHIFT" else empty end),
+              (if (.modmask / 4 | floor) % 2 >= 1 then "CTRL" else empty end),
+              (if (.modmask / 8 | floor) % 2 >= 1 then "ALT" else empty end),
+              (if (.modmask / 64 | floor) % 2 >= 1 then "SUPER" else empty end) ]
+            | join(" + ");
+  .[] | select(.submap == "")
+      | "\(if mods == "" then "" else mods + " + " end)\(.key)\t\(if .has_description then .description else .dispatcher + " " + .arg end)"' |
+	column -t -s $'\t' |
+	rofi -dmenu -i -config "$HOME/.config/rofi/config-keybinds.rasi" -mesg "Keybinds (Enter does nothing)"

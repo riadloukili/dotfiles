@@ -120,8 +120,8 @@
     "sort-by-number": true,
     "show-special": false,
     "on-click": "activate",
-    "on-scroll-up": "hyprctl dispatch workspace e+1",
-    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    "on-scroll-up": "hyprctl dispatch \"hl.dsp.focus({ workspace = 'e+1' })\"",
+    "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({ workspace = 'e-1' })\"",
     "persistent-workspaces": {
       "*": 5
     },
@@ -240,8 +240,7 @@
   },
   "custom/hint": {
     "format": "󰺁 HINT!",
-    "on-click": "$HOME/.config/hypr/scripts/KeyHints.sh",
-    "on-click-right": "$HOME/.config/hypr/scripts/KeyBinds.sh",
+    "on-click": "$HOME/.config/hypr/scripts/KeyBinds.sh",
     "tooltip": true,
     "tooltip-format": "Left Click: Quick Tips\nRight Click: Keybinds"
   },
@@ -326,7 +325,7 @@
       "custom/power",
       "custom/lock",
       "keyboard-state",
-      "custom/keyboard"
+      "hyprland/language"
     ]
   },
   "custom/menu": {
@@ -554,10 +553,9 @@
       "unlocked": ""
     }
   },
-  "custom/keyboard": {
-    "exec": "cat $HOME/.cache/kb_layout",
-    "interval": 1,
-    "format": " {}",
-    "on-click": "$HOME/.config/hypr/scripts/SwitchKeyboardLayout.sh"
+  "hyprland/language": {
+    "format": " {short}",
+    "tooltip-format": "Keyboard layout: {long}",
+    "on-click": "hyprctl eval \"require('lib.keyboard').cycle()\""
   }
 }
