@@ -22,7 +22,7 @@ if [ "$HYPRGAMEMODE" = 1 ] ; then
     notify-send -e -u low -i "$notif" " Gamemode:" " enabled"
     exit
 else
-	awww-daemon --format argb && awww img "$HOME/.config/rofi/.current_wallpaper" &
+	awww-daemon --format argb && awww img "$HOME/.config/hypr/wallpaper.png" &
 	sleep 0.1
 	${SCRIPTSDIR}/WallustSwww.sh
 	sleep 0.5

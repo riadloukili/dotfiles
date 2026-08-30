@@ -3,7 +3,6 @@ result
 tmux/plugins/*
 !tmux/plugins/tpm
 direnv/lib
-hypr/.initial_startup_done
 cava/shaders/
 zsh/.z*
 zsh/plugins/
