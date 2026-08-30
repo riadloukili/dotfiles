@@ -47,7 +47,7 @@ return {
   kbBrowser = "SUPER + B",
   kbEditor = "",
   kbFileExplorer = "SUPER + E",
-  kbLauncher = { "SUPER + SUPER_L", "SUPER + D" },
+  kbLauncher = "SUPER + D",
   kbSession = "CTRL + ALT + P",
   kbLock = "CTRL + ALT + L",
   kbShowSidebar = "SUPER + SHIFT + N",
