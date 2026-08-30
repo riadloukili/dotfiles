@@ -38,8 +38,6 @@ end
 hl.on("hyprland.start", function()
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
   hl.exec_cmd("shikane")
-  hl.exec_cmd("nm-applet --indicator")
-  hl.exec_cmd("blueman-applet")
   -- First login on a machine: pick a wallpaper (and scheme) from ~/Pictures/Wallpapers.
   hl.exec_cmd("test -e ~/.local/state/caelestia/wallpaper/path.txt || caelestia wallpaper -r")
 end)
