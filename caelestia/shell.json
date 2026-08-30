@@ -74,5 +74,9 @@
         "reboot"
       ]
     }
+  },
+  "services": {
+    "useFahrenheit": false,
+    "useFahrenheitPerformance": false
   }
 }
