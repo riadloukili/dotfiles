@@ -109,6 +109,11 @@
         "id": "battery",
         "enabled": true
       }
-    ]
+    ],
+    "clock": {
+      "showIcon": false,
+      "showDate": true,
+      "background": true
+    }
   }
 }
