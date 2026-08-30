@@ -1,7 +1,7 @@
 # dotfiles
 
 My configs, linked into `~/.config/<name>` by [nixos-config](https://github.com/riadloukili/nixos-config)
-(every top-level directory here becomes `~/.config/<name>`; anything missing falls back to the program's defaults).
+(every top-level directory here becomes `~/.config/<name>`, and everything under `home/` becomes `~/<name>` for things that live outside `~/.config`; anything missing falls back to the program's defaults).
 Usable on any machine: clone to `~/personal/dotfiles` and symlink what you need.
 
 | entry | program |
