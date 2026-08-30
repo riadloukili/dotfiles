@@ -1,3 +1,4 @@
+-- tokyonight stays installed as the fallback when no caelestia scheme exists.
 return {
   {
     "folke/tokyonight.nvim",
@@ -7,13 +8,6 @@ return {
         sidebars = "transparent",
         floats = "transparent",
       },
-    },
-  },
-
-  {
-    "LazyVim/LazyVim",
-    opts = {
-      colorscheme = "tokyonight",
     },
   },
 }
