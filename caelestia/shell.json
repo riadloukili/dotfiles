@@ -50,7 +50,10 @@
         "id": "vpn",
         "enabled": true
       }
-    ]
+    ],
+    "toasts": {
+      "configLoaded": false
+    }
   },
   "session": {
     "commands": {
