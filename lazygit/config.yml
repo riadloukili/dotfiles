@@ -1,5 +1,5 @@
 git:
-  pagers:
-    - pager: diff-so-fancy
-    # - colorArg: always
-    #   pager: delta --paging=never
+  diffRenderers:
+    - command: diff-so-fancy
+  # - colorArg: always
+  #   pager: delta --paging=never
