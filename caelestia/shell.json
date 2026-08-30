@@ -39,6 +39,10 @@
         "enabled": true
       },
       {
+        "id": "gameMode",
+        "enabled": true
+      },
+      {
         "id": "dnd",
         "enabled": true
       },
