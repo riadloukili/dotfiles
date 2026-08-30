@@ -1,0 +1,10 @@
+{
+  "general": {
+    "apps": {
+      "terminal": ["kitty"],
+      "audio": ["pavucontrol"],
+      "playback": ["mpv"],
+      "explorer": ["thunar"]
+    }
+  }
+}

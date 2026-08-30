@@ -7,4 +7,3 @@ cava/shaders/
 zsh/.z*
 zsh/plugins/
 fontconfig/conf.d
-hypr/workspaces.lua

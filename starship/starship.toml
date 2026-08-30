@@ -1,0 +1,96 @@
+# Prompt. Left: os · directory · git, then ❯ on its own line.
+# Right: host location (CLOUD_PROVIDER, set per host by nixos-config), exit
+# status, duration, jobs, direnv, toolchains, time.
+add_newline = true
+format = """
+[](fg:#3b4252)$os[](fg:#3b4252 bg:#4c566a)$directory[](fg:#4c566a bg:#5e81ac)$git_branch$git_status[](fg:#5e81ac)
+$character"""
+right_format = """
+$custom\
+$status\
+$cmd_duration\
+$jobs\
+$direnv\
+$python\
+$nodejs\
+$golang\
+$rust\
+$nix_shell\
+$time"""
+
+[os]
+disabled = false
+style = "bg:#3b4252 fg:#d8dee9"
+format = "[ $symbol ]($style)"
+
+[os.symbols]
+NixOS = ""
+Arch = ""
+Linux = ""
+
+[directory]
+style = "bg:#4c566a fg:#eceff4"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:#5e81ac fg:#eceff4"
+format = "[ $symbol $branch ]($style)"
+
+[git_status]
+style = "bg:#5e81ac fg:#eceff4"
+format = "[$all_status$ahead_behind ]($style)"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+[custom.cloud]
+description = "Where this machine lives"
+when = 'test -n "$CLOUD_PROVIDER"'
+command = '''
+case "$CLOUD_PROVIDER" in
+  aws) printf "" ;;
+  hetzner) printf "" ;;
+  digitalocean) printf "" ;;
+  home) printf "" ;;
+  *) printf "%s" "$CLOUD_PROVIDER" ;;
+esac
+'''
+style = "bold"
+format = "[$output]($style) "
+shell = ["sh"]
+
+[status]
+disabled = false
+format = "[$symbol$status]($style) "
+
+[cmd_duration]
+min_time = 2000
+format = "[$duration](yellow) "
+
+[jobs]
+format = "[$symbol$number](blue) "
+
+[direnv]
+disabled = false
+format = "[$symbol$loaded]($style) "
+
+[python]
+format = "[${symbol}${version}( \\($virtualenv\\))]($style) "
+[nodejs]
+format = "[$symbol($version)]($style) "
+[golang]
+format = "[$symbol($version)]($style) "
+[rust]
+format = "[$symbol($version)]($style) "
+[nix_shell]
+format = "[$symbol$state]($style) "
+
+[time]
+disabled = false
+format = "[$time](dimmed white)"
+time_format = "%H:%M"
