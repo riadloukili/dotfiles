@@ -114,6 +114,10 @@
       "showIcon": false,
       "showDate": true,
       "background": true
+    },
+    "workspaces": {
+      "shown": 9,
+      "perMonitorWorkspaces": true
     }
   }
 }
