@@ -1,0 +1,46 @@
+# Display profiles. Matched on EDID (vendor/model/serial) rather than connector
+# names: the dock's monitor shows up as DP-1 or DP-3 depending on how it
+# enumerates, so a name-keyed rule stops applying after a replug.
+# Regenerate a profile from the live arrangement with `shikanectl export <name>`.
+
+[[profile]]
+name = "docked"
+
+# Left, portrait.
+[[profile.output]]
+enable = true
+search = [ "m=VG27AQL5A", "s=TCLMQS093286", "v=ASUSTek COMPUTER INC" ]
+mode = "2560x1440@59.951Hz"
+position = "0,0"
+transform = "90"
+scale = 1.0
+
+# Middle.
+[[profile.output]]
+enable = true
+search = [ "m=VG27AQL5A", "s=T9LMQS005420", "v=ASUSTek COMPUTER INC" ]
+mode = "2560x1440@59.951Hz"
+position = "1440,1060"
+transform = "normal"
+scale = 1.0
+
+# Laptop panel, right of the middle screen.
+[[profile.output]]
+enable = true
+search = "n=eDP-1"
+mode = "1920x1200@59.999Hz"
+position = "4000,1178"
+transform = "normal"
+scale = 1.0
+
+# Undocked: the laptop panel on its own.
+[[profile]]
+name = "laptop"
+
+[[profile.output]]
+enable = true
+search = "n=eDP-1"
+mode = "preferred"
+position = "0,0"
+transform = "normal"
+scale = 1.0
