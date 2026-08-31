@@ -1,6 +1,6 @@
 {
   "theme": {
-    "enableTerm": true,
+    "enableTerm": false,
     "enableHypr": true,
     "enableFuzzel": true,
     "enableGtk": true,
