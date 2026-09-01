@@ -3,8 +3,19 @@
 # enumerates, so a name-keyed rule stops applying after a replug.
 # Regenerate a profile from the live arrangement with `shikanectl export <name>`.
 
+# Home
+#             ╭──────────────────────────────╮
+# ╭──────────╮│ ASUS VG27AQL5A               │
+# │ ASUS     ││ 2560×1440                    │
+# │VG27AQL5A ││                              │╭────────────────────╮
+# │ rotated  ││                              ││ Laptop / eDP-1     │
+# │1440×2560 │╰──────────────────────────────╯│ 1920×1200          │
+# │          │                                ╰────────────────────╯
+# ╰──────────╯
+#
+# Left to right: rotated panel 1-3, centre panel 4-6, laptop 7-9.
 [[profile]]
-name = "docked"
+name = "home"
 
 # Left, portrait.
 [[profile.output]]
@@ -14,6 +25,7 @@ mode = "2560x1440@59.951Hz"
 position = "0,0"
 transform = "90"
 scale = 1.0
+exec = ['wks-range --default 1 3 "$SHIKANE_OUTPUT_NAME"']
 
 # Middle.
 [[profile.output]]
@@ -23,6 +35,7 @@ mode = "2560x1440@59.951Hz"
 position = "1440,1060"
 transform = "normal"
 scale = 1.0
+exec = ['wks-range --default 4 6 "$SHIKANE_OUTPUT_NAME"']
 
 # Laptop panel, right of the middle screen.
 [[profile.output]]
@@ -32,8 +45,15 @@ mode = "1920x1200@59.999Hz"
 position = "4000,1178"
 transform = "normal"
 scale = 1.0
+exec = ['wks-range --default 7 9 "$SHIKANE_OUTPUT_NAME"']
 
 # Undocked: the laptop panel on its own.
+# ╭────────────────────╮
+# │ Laptop / eDP-1     │
+# │ 1920×1200          │
+# │                    │
+# │                    │
+# ╰────────────────────╯
 [[profile]]
 name = "laptop"
 
@@ -44,3 +64,4 @@ mode = "preferred"
 position = "0,0"
 transform = "normal"
 scale = 1.0
+exec = ['wks-range --default 1 9 "$SHIKANE_OUTPUT_NAME"']
