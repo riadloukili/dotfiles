@@ -1,0 +1,374 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+INSTANCE="${WKS_HYPR_INSTANCE:-0}"
+HYPRCTL=(hyprctl --instance "$INSTANCE")
+
+# auto, new, or legacy
+HYPR_API="${WKS_HYPR_API:-auto}"
+
+WAIT="${WKS_WAIT:-5}"
+SET_DEFAULT=0
+QUIET=0
+
+usage() {
+    cat <<EOF
+Usage: wks-range [OPTIONS] FIRST LAST OUTPUT
+
+Claim workspaces FIRST..LAST for the display OUTPUT:
+
+  1. bind each workspace to OUTPUT with a workspace rule, so workspaces
+     that do not exist yet are created there
+  2. move each already-created workspace to OUTPUT
+
+OUTPUT is a display name as Hyprland reports it. It is never hardcoded
+here: pass \$SHIKANE_OUTPUT_NAME from a shikane output.exec, or a name
+from 'wks monitors'.
+
+Options:
+  -d, --default        also make FIRST the default workspace of OUTPUT
+  -w, --wait SECONDS   wait up to SECONDS for OUTPUT to show up (default $WAIT)
+  -q, --quiet          report problems only
+  -h, --help
+
+Environment:
+  WKS_HYPR_INSTANCE=0
+  WKS_HYPR_API=auto|new|legacy
+  WKS_WAIT=$WAIT
+  WKS_DEBUG=1          report which dispatcher API was detected
+
+Examples:
+  wks-range 4 6 DP-6
+  wks-range --default 1 3 "\$SHIKANE_OUTPUT_NAME"
+EOF
+}
+
+die() {
+    printf 'wks-range: %s\n' "$*" >&2
+    exit 1
+}
+
+warn() {
+    printf 'wks-range: %s\n' "$*" >&2
+}
+
+say() {
+    ((QUIET)) || printf '%s\n' "$*"
+}
+
+debug() {
+    [[ -n "${WKS_DEBUG:-}" ]] && printf 'wks-range: %s\n' "$*" >&2
+    return 0
+}
+
+is_success() {
+    [[ "$1" == "ok" ]]
+}
+
+is_invalid_dispatcher() {
+    local output="${1,,}"
+
+    [[ "$output" == *"invalid dispatcher"* ||
+       "$output" == *"unknown dispatcher"* ]]
+}
+
+is_workspace_missing() {
+    local output="${1,,}"
+
+    [[ "$output" == *"workspace not found"* ]]
+}
+
+check_connection() {
+    local output
+
+    if ! output="$("${HYPRCTL[@]}" -j monitors 2>&1)"; then
+        die "could not connect to Hyprland instance $INSTANCE:
+$output"
+    fi
+
+    if ! jq -e 'type == "array"' >/dev/null 2>&1 <<<"$output"; then
+        die "Hyprland returned invalid JSON:
+$output"
+    fi
+}
+
+monitor_is_active() {
+    local monitor="$1"
+
+    "${HYPRCTL[@]}" -j monitors |
+        jq -e --arg monitor "$monitor" \
+            'any(.[]; .name == $monitor)' >/dev/null
+}
+
+# shikane runs output.exec as soon as it has applied the profile, which can
+# be a moment before Hyprland has published the display. Poll instead of
+# failing on the first look.
+await_monitor() {
+    local monitor="$1"
+    local deadline=$((SECONDS + WAIT))
+
+    while :; do
+        monitor_is_active "$monitor" && return 0
+        ((SECONDS < deadline)) || return 1
+        sleep 0.1
+    done
+}
+
+workspace_exists() {
+    local workspace="$1"
+
+    "${HYPRCTL[@]}" -j workspaces |
+        jq -e --argjson workspace "$workspace" \
+            'any(.[]; .id == $workspace)' >/dev/null
+}
+
+# A workspace rule survives display hotplug and applies to workspaces that
+# have not been created yet, so this is what actually claims the range.
+# Hyprland merges the given properties into any existing rule for that
+# workspace; unmentioned properties are left alone.
+bind_workspace() {
+    local workspace="$1"
+    local monitor="$2"
+    local rule="$workspace,monitor:$monitor"
+    local output
+
+    if ((SET_DEFAULT)); then
+        if ((workspace == FIRST)); then
+            rule+=",default:true"
+        else
+            rule+=",default:false"
+        fi
+    fi
+
+    output="$("${HYPRCTL[@]}" keyword workspace "$rule" 2>&1 || true)"
+
+    is_success "$output" ||
+        die "failed binding workspace $workspace to $monitor: $output"
+}
+
+dispatch_new() {
+    local workspace="$1"
+    local monitor="$2"
+
+    "${HYPRCTL[@]}" dispatch \
+        "hl.dsp.workspace.move({
+            workspace = \"$workspace\",
+            monitor = \"$monitor\"
+        })" 2>&1
+}
+
+dispatch_legacy() {
+    local workspace="$1"
+    local monitor="$2"
+
+    "${HYPRCTL[@]}" dispatch \
+        moveworkspacetomonitor \
+        "$workspace $monitor" 2>&1
+}
+
+move_with_new_api() {
+    local workspace="$1"
+    local monitor="$2"
+    local output
+
+    output="$(dispatch_new "$workspace" "$monitor" || true)"
+
+    if is_success "$output"; then
+        return 0
+    fi
+
+    if is_invalid_dispatcher "$output"; then
+        return 10
+    fi
+
+    if is_workspace_missing "$output"; then
+        return 20
+    fi
+
+    printf '%s\n' "$output" >&2
+    return 1
+}
+
+move_with_legacy_api() {
+    local workspace="$1"
+    local monitor="$2"
+    local output
+
+    output="$(dispatch_legacy "$workspace" "$monitor" || true)"
+
+    if is_success "$output"; then
+        return 0
+    fi
+
+    if is_workspace_missing "$output"; then
+        return 20
+    fi
+
+    printf '%s\n' "$output" >&2
+    return 1
+}
+
+move_workspace() {
+    local workspace="$1"
+    local monitor="$2"
+    local status
+
+    if ! workspace_exists "$workspace"; then
+        say "Workspace $workspace → $monitor: bound; not currently created"
+        return 0
+    fi
+
+    case "$HYPR_API" in
+        new)
+            move_with_new_api "$workspace" "$monitor" || status=$?
+
+            case "${status:-0}" in
+                0)
+                    ;;
+                20)
+                    say "Workspace $workspace → $monitor: bound; disappeared"
+                    return 0
+                    ;;
+                *)
+                    die "failed moving workspace $workspace to $monitor"
+                    ;;
+            esac
+            ;;
+
+        legacy)
+            move_with_legacy_api "$workspace" "$monitor" || status=$?
+
+            case "${status:-0}" in
+                0)
+                    ;;
+                20)
+                    say "Workspace $workspace → $monitor: bound; disappeared"
+                    return 0
+                    ;;
+                *)
+                    die "failed moving workspace $workspace to $monitor"
+                    ;;
+            esac
+            ;;
+
+        auto)
+            move_with_new_api "$workspace" "$monitor" || status=$?
+
+            case "${status:-0}" in
+                0)
+                    HYPR_API="new"
+                    debug "using current Hyprland dispatcher API"
+                    ;;
+
+                10)
+                    status=0
+                    move_with_legacy_api "$workspace" "$monitor" ||
+                        status=$?
+
+                    case "$status" in
+                        0)
+                            HYPR_API="legacy"
+                            debug "using legacy Hyprland dispatcher API"
+                            ;;
+                        20)
+                            say "Workspace $workspace → $monitor: bound; disappeared"
+                            return 0
+                            ;;
+                        *)
+                            die "failed moving workspace $workspace to $monitor"
+                            ;;
+                    esac
+                    ;;
+
+                20)
+                    say "Workspace $workspace → $monitor: bound; disappeared"
+                    return 0
+                    ;;
+
+                *)
+                    die "failed moving workspace $workspace to $monitor"
+                    ;;
+            esac
+            ;;
+
+        *)
+            die "invalid WKS_HYPR_API value: $HYPR_API"
+            ;;
+    esac
+
+    say "Workspace $workspace → $monitor: bound and moved"
+}
+
+claim_range() {
+    local first="$1"
+    local last="$2"
+    local monitor="$3"
+    local workspace
+
+    for ((workspace = first; workspace <= last; workspace++)); do
+        bind_workspace "$workspace" "$monitor"
+        move_workspace "$workspace" "$monitor"
+    done
+}
+
+ARGS=()
+
+while (($#)); do
+    case "$1" in
+        -d|--default)
+            SET_DEFAULT=1
+            shift
+            ;;
+        -w|--wait)
+            [[ $# -ge 2 ]] || die "--wait needs a value"
+            WAIT="$2"
+            shift 2
+            ;;
+        -q|--quiet)
+            QUIET=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            ARGS+=("$@")
+            break
+            ;;
+        -*)
+            printf 'wks-range: unknown option: %s\n\n' "$1" >&2
+            usage >&2
+            exit 2
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+((${#ARGS[@]} == 3)) || {
+    usage >&2
+    exit 2
+}
+
+FIRST="${ARGS[0]}"
+LAST="${ARGS[1]}"
+MONITOR="${ARGS[2]}"
+
+[[ "$FIRST" =~ ^[0-9]+$ ]] || die "FIRST must be a number: $FIRST"
+[[ "$LAST" =~ ^[0-9]+$ ]] || die "LAST must be a number: $LAST"
+[[ "$WAIT" =~ ^[0-9]+$ ]] || die "--wait must be a whole number: $WAIT"
+((FIRST >= 1)) || die "FIRST must be at least 1: $FIRST"
+((FIRST <= LAST)) || die "FIRST must not be greater than LAST: $FIRST > $LAST"
+[[ -n "$MONITOR" ]] || die "OUTPUT is empty (is \$SHIKANE_OUTPUT_NAME set?)"
+
+check_connection
+
+await_monitor "$MONITOR" ||
+    die "display $MONITOR did not show up within ${WAIT}s"
+
+claim_range "$FIRST" "$LAST" "$MONITOR"

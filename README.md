@@ -14,3 +14,4 @@ Usable on any machine: clone to `~/personal/dotfiles` and symlink what you need.
 | `zsh/zshrc.local` | personal zsh extras (sourced by home-manager's zsh) |
 | `starship/` | prompt, with the `$CLOUD_PROVIDER` icon (`STARSHIP_CONFIG` points here) |
 | `bat/` `lazygit/` `fastfetch/` `atuin/` `direnv/` | CLI tools |
+| `home/bin/` | scripts for `~/bin`: `wks-range` (claims a Hyprland workspace range for a display; called by shikane per output) |
