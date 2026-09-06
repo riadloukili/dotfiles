@@ -31,6 +31,23 @@ for i = 1, 10 do
   })
 end
 
+-- FreeCAD, in the spirit of caelestia's fusion360 rule: a CAD viewport is
+-- unreadable through the shell's transparency and blur, and the splash screen
+-- (titled just "FreeCAD", before the versioned main window appears) otherwise
+-- takes a tile of its own.
+hl.window_rule({ match = { class = "org.freecad.FreeCAD" }, opacity = "1.0 override" })
+hl.window_rule({ match = { class = "org.freecad.FreeCAD" }, no_blur = true })
+hl.window_rule({
+  match = { class = "org.freecad.FreeCAD", title = "^FreeCAD$" },
+  float = true,
+  center = true,
+  -- A splash is meant to be undecorated; floating it would otherwise hand it
+  -- the shell's border, rounding and shadow.
+  border_size = 0,
+  rounding = 0,
+  no_shadow = true,
+})
+
 -- Session services (caelestia's execs.lua starts the shell and cliphist).
 -- Hyprland runs under uwsm (the SDDM default), which imports the env into
 -- systemd and activates graphical-session.target: portals and user services
