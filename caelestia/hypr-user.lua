@@ -67,6 +67,13 @@ for i = 1, 10 do
   })
 end
 
+-- KeePassXC floats: it is reached for mid-task, from whatever is already on
+-- screen, and tiling it would reshuffle the windows being worked in. Matching
+-- the class alone covers the unlock prompt and the browser-access dialog too,
+-- which are the ones that most want to be in the middle.
+hl.window_rule({ match = { class = "org.keepassxc.KeePassXC" }, float = true })
+hl.window_rule({ match = { class = "org.keepassxc.KeePassXC" }, center = true })
+
 -- FreeCAD, in the spirit of caelestia's fusion360 rule: a CAD viewport is
 -- unreadable through the shell's transparency and blur, and the splash screen
 -- (titled just "FreeCAD", before the versioned main window appears) otherwise
@@ -91,6 +98,12 @@ hl.window_rule({
 hl.on("hyprland.start", function()
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
   hl.exec_cmd("shikane")
+  -- KeePassXC: the browser extension talks to the running process over a
+  -- socket, so it has to be up for autofill to work at all. It starts hidden
+  -- in the tray with the database locked (MinimizeOnStartup, MinimizeToTray
+  -- and ShowTrayIcon in keepassxc.ini, which is app state and not in here),
+  -- so the password is asked for on the first click, not at every login.
+  hl.exec_cmd("keepassxc")
   -- First login on a machine: pick a wallpaper (and scheme) from ~/Pictures/Wallpapers.
   hl.exec_cmd("test -e ~/.local/state/caelestia/wallpaper/path.txt || caelestia wallpaper -r")
 end)
