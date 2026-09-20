@@ -77,7 +77,8 @@
   },
   "services": {
     "useFahrenheit": false,
-    "useFahrenheitPerformance": false
+    "useFahrenheitPerformance": false,
+    "maxVolume": 1.5
   },
   "bar": {
     "statusIcons": [

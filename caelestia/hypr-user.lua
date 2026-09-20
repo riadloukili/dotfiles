@@ -26,6 +26,31 @@ hl.config({
   },
 })
 
+-- Volume keys, with the change made audible. caelestia's keybinds.lua changes
+-- the level silently; volume-step (users/riad/home.nix) does the same wpctl
+-- call and then plays the freedesktop volume-change sound, but only when the
+-- level actually moved -- at the ceiling wpctl clamps to a no-op and a blip
+-- would claim a change the OSD correctly does not show.
+--
+-- Rebound rather than added to, since a second bind on a key would fire
+-- alongside caelestia's and step the volume twice. volumeMax and volumeStep
+-- are passed in so hypr-vars.lua stays the one place they are set: require
+-- returns the table hyprland.lua has already merged the overrides into.
+local vars = require("variables")
+local volOpts = { locked = true, repeating = true }
+
+hl.unbind("XF86AudioRaiseVolume")
+hl.unbind("XF86AudioLowerVolume")
+
+hl.bind("XF86AudioRaiseVolume",
+  hl.dsp.exec_cmd("volume-step up " .. (vars.volumeMax / 100) .. " " .. vars.volumeStep), volOpts)
+hl.bind("XF86AudioLowerVolume",
+  hl.dsp.exec_cmd("volume-step down " .. (vars.volumeMax / 100) .. " " .. vars.volumeStep), volOpts)
+
+-- Mute goes through the same script so unmuting sounds and muting does not.
+hl.unbind("XF86AudioMute")
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("volume-step mute"), { locked = true })
+
 -- Cursor (caelestia's env.lua sets XCURSOR_* from hypr-vars)
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "24")

@@ -12,6 +12,12 @@ return {
   cursorTheme = "Bibata-Modern-Ice",
   cursorSize = 24,
 
+  -- Volume above 100%. Two separate ceilings: this one is the -l limit the
+  -- XF86AudioRaiseVolume bind hands to wpctl (percent), the shell's slider and
+  -- OSD clamp against services.maxVolume in shell.json (a fraction). Both have
+  -- to move or the keys stop where the mouse does not.
+  volumeMax = 150,
+
   -- Three fingers to swipe between workspaces (caelestia's default is four).
   -- gestureFingers is also 3, but those gestures are vertical and this one is
   -- horizontal, so they do not collide.
