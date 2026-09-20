@@ -13,3 +13,6 @@ alias la='ls -a'
 alias lla='ls -la'
 alias lt='ls --tree'
 alias v='nvim'
+
+# fortiup ships its own zsh completion (needs compinit to have run first).
+command -v fortiup >/dev/null && eval "$(fortiup zsh-completion)"

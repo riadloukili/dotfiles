@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Bring up a FortiGate SSL VPN from a named config.
+#
+#   fortiup <name>          ->  sudo openfortivpn -c ~/.config/openfortivpn/<name>
+#   fortiup                 ->  lists what is in that directory
+#   fortiup zsh-completion
+#   fortiup bash-completion
+#
+# Completion ships with the script, so there is one file to install:
+#   .zshrc    command -v fortiup >/dev/null && eval "$(fortiup zsh-completion)"
+#   .bashrc   command -v fortiup >/dev/null && eval "$(fortiup bash-completion)"
+#
+# The configs hold gateway addresses and usernames, so they live in
+# ~/.config/openfortivpn/ and are NOT part of this repo. Only the name is ever
+# typed here. openfortivpn needs root for the tun device and the routes.
+
+set -Eeuo pipefail
+
+DIR="${XDG_CONFIG_HOME:-$HOME/.config}/openfortivpn"
+
+# Plain glob rather than compgen: nixpkgs' scripting bash is built without
+# programmable completion, so compgen is not a builtin there. An unmatched
+# glob stays literal and the -f test drops it.
+available() {
+    local f
+    local -a names=()
+    for f in "$DIR"/*; do [ -f "$f" ] && names+=("${f##*/}"); done
+    if [ ${#names[@]} -gt 0 ]; then
+        echo "available configs in $DIR:" >&2
+        printf '  %s\n' "${names[@]}" >&2
+    else
+        echo "no configs in $DIR" >&2
+    fi
+}
+
+usage() {
+    echo "usage: ${0##*/} <config> [openfortivpn args...]" >&2
+    echo "       ${0##*/} zsh-completion | bash-completion" >&2
+}
+
+# compdef needs compinit to have run already.
+zsh_completion() {
+    cat <<'ZSH'
+_fortiup() {
+  if (( CURRENT == 2 )); then
+    local dir=${XDG_CONFIG_HOME:-$HOME/.config}/openfortivpn
+    local -a cfgs
+    cfgs=(${dir}/*(N.:t))          # N: no match is fine, .: files only, :t basename
+    _describe -t fortiup-configs 'vpn config' cfgs
+  else
+    _default                        # anything after that goes to openfortivpn
+  fi
+}
+compdef _fortiup fortiup
+ZSH
+}
+
+bash_completion() {
+    cat <<'BASH'
+_fortiup() {
+  local cur dir f names
+  cur=${COMP_WORDS[COMP_CWORD]}
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    dir="${XDG_CONFIG_HOME:-$HOME/.config}/openfortivpn"
+    names=()
+    for f in "$dir"/*; do [ -f "$f" ] && names+=("${f##*/}"); done
+    COMPREPLY=($(compgen -W "${names[*]}" -- "$cur"))
+  else
+    COMPREPLY=($(compgen -f -- "$cur"))   # anything after that goes to openfortivpn
+  fi
+}
+complete -F _fortiup fortiup
+BASH
+}
+
+# Reserved words, so a config cannot be called "zsh-completion" either.
+case "${1:-}" in
+    zsh-completion)  zsh_completion;  exit 0 ;;
+    bash-completion) bash_completion; exit 0 ;;
+    -h | --help)     usage; available; exit 0 ;;
+    "")              usage; available; exit 1 ;;
+esac
+
+NAME=$1
+shift
+CONFIG="$DIR/$NAME"
+
+if [ ! -r "$CONFIG" ]; then
+    echo "${0##*/}: no config at $CONFIG" >&2
+    available
+    exit 1
+fi
+
+if ! command -v openfortivpn >/dev/null; then
+    echo "${0##*/}: openfortivpn is not installed (it is in users/riad/home.nix; rebuild)" >&2
+    exit 1
+fi
+
+# Absolute path: sudo does not necessarily keep this user's PATH for lookup.
+exec sudo "$(command -v openfortivpn)" -c "$CONFIG" "$@"
