@@ -15,6 +15,17 @@ hl.config({
   },
 })
 
+-- Swipe only between workspaces that exist. Hyprland destroys a workspace once
+-- its last window goes, and the swipe walks the monitor's open workspaces
+-- (m+1/m-1), so empty ones are skipped already -- except the one at the end,
+-- which create_new conjures on every overswipe. caelestia's gestures.lua turns
+-- that on; this is the only key of its gestures block being changed.
+hl.config({
+  gestures = {
+    workspace_swipe_create_new = false,
+  },
+})
+
 -- Cursor (caelestia's env.lua sets XCURSOR_* from hypr-vars)
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "24")

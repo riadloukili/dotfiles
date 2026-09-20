@@ -12,6 +12,11 @@ return {
   cursorTheme = "Bibata-Modern-Ice",
   cursorSize = 24,
 
+  -- Three fingers to swipe between workspaces (caelestia's default is four).
+  -- gestureFingers is also 3, but those gestures are vertical and this one is
+  -- horizontal, so they do not collide.
+  workspaceSwipeFingers = 3,
+
   -- Workspaces: SUPER+n go, SUPER+SHIFT+n move (CTRL+SUPER+n = move silently, in hypr-user.lua)
   kbGoToWs = "SUPER",
   kbMoveWinToWs = "SUPER + SHIFT",
