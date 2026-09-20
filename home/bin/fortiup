@@ -96,5 +96,16 @@ if ! command -v openfortivpn >/dev/null; then
     exit 1
 fi
 
+# Leave DNS alone: the tunnel carries routes only, and name resolution keeps
+# using the local network's servers. --set-dns is the one that matters --
+# it defaults to 1, which is what makes openfortivpn push the gateway's
+# nameservers into /etc/resolv.conf (through resolvconf, here). pppd can do
+# the same behind its back; that already defaults to off, so passing it is
+# only insurance against a config file turning it on.
+#
+# They sit before "$@" so a later flag still wins, since openfortivpn takes
+# the last occurrence:  fortiup <config> --set-dns=1
+#
 # Absolute path: sudo does not necessarily keep this user's PATH for lookup.
-exec sudo "$(command -v openfortivpn)" -c "$CONFIG" "$@"
+exec sudo "$(command -v openfortivpn)" -c "$CONFIG" \
+    --set-dns=0 --pppd-use-peerdns=0 "$@"
