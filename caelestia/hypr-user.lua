@@ -103,7 +103,12 @@ hl.on("hyprland.start", function()
   -- in the tray with the database locked (MinimizeOnStartup, MinimizeToTray
   -- and ShowTrayIcon in keepassxc.ini, which is app state and not in here),
   -- so the password is asked for on the first click, not at every login.
-  hl.exec_cmd("keepassxc")
+  --
+  -- keepassxc-tray, not keepassxc: Qt registers the tray icon once and never
+  -- retries, so starting before caelestia's bar owns the
+  -- StatusNotifierWatcher leaves it running with no icon -- indistinguishable
+  -- from not having started. The wrapper waits for the bus name first.
+  hl.exec_cmd("keepassxc-tray")
   -- First login on a machine: pick a wallpaper (and scheme) from ~/Pictures/Wallpapers.
   hl.exec_cmd("test -e ~/.local/state/caelestia/wallpaper/path.txt || caelestia wallpaper -r")
 end)
