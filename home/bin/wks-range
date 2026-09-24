@@ -127,11 +127,46 @@ workspace_exists() {
 # have not been created yet, so this is what actually claims the range.
 # Hyprland merges the given properties into any existing rule for that
 # workspace; unmentioned properties are left alone.
-bind_workspace() {
+#
+# Since Hyprland 0.56 the config is Lua and 'hyprctl keyword' is refused
+# ("keyword can't work with non-legacy parsers. Use eval."), so the rule is
+# issued as hl.workspace_rule() through 'hyprctl eval'; the keyword form is
+# kept for older releases, where 'eval' is an unknown request.
+lua_string() {
+    local value="$1"
+
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    printf '"%s"' "$value"
+}
+
+is_unknown_request() {
+    local output="${1,,}"
+
+    [[ "$output" == *"unknown request"* ||
+       "$output" == *"invalid command"* ]]
+}
+
+bind_with_new_api() {
+    local workspace="$1"
+    local monitor="$2"
+    local rule="workspace = $(lua_string "$workspace"), monitor = $(lua_string "$monitor")"
+
+    if ((SET_DEFAULT)); then
+        if ((workspace == FIRST)); then
+            rule+=", default = true"
+        else
+            rule+=", default = false"
+        fi
+    fi
+
+    "${HYPRCTL[@]}" eval "hl.workspace_rule({ $rule })" 2>&1
+}
+
+bind_with_legacy_api() {
     local workspace="$1"
     local monitor="$2"
     local rule="$workspace,monitor:$monitor"
-    local output
 
     if ((SET_DEFAULT)); then
         if ((workspace == FIRST)); then
@@ -141,7 +176,39 @@ bind_workspace() {
         fi
     fi
 
-    output="$("${HYPRCTL[@]}" keyword workspace "$rule" 2>&1 || true)"
+    "${HYPRCTL[@]}" keyword workspace "$rule" 2>&1
+}
+
+bind_workspace() {
+    local workspace="$1"
+    local monitor="$2"
+    local output
+
+    case "$HYPR_API" in
+        new)
+            output="$(bind_with_new_api "$workspace" "$monitor" || true)"
+            ;;
+        legacy)
+            output="$(bind_with_legacy_api "$workspace" "$monitor" || true)"
+            ;;
+        auto)
+            output="$(bind_with_new_api "$workspace" "$monitor" || true)"
+
+            if is_success "$output"; then
+                HYPR_API="new"
+                debug "using current Hyprland config API (eval)"
+            elif is_unknown_request "$output"; then
+                output="$(bind_with_legacy_api "$workspace" "$monitor" || true)"
+                is_success "$output" && {
+                    HYPR_API="legacy"
+                    debug "using legacy Hyprland config API (keyword)"
+                }
+            fi
+            ;;
+        *)
+            die "invalid WKS_HYPR_API value: $HYPR_API"
+            ;;
+    esac
 
     is_success "$output" ||
         die "failed binding workspace $workspace to $monitor: $output"
