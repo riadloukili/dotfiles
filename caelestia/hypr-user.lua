@@ -2,12 +2,12 @@
 -- that has no variable in hypr-vars.lua.
 local dropdown = require("dropdown")
 
--- Input: two layouts, switched by XKB itself; touch screen and pen as they are.
+-- Input: two layouts; touch screen and pen as they are.
 hl.config({
   input = {
     kb_layout = "us,ca",
     kb_variant = ",multix",
-    kb_options = "grp:alt_shift_toggle",
+    kb_options = "",
     numlock_by_default = true,
     touchpad = { tap_to_click = true },
     touchdevice = { enabled = true },
@@ -54,6 +54,19 @@ hl.bind("XF86AudioMute", hl.dsp.exec_cmd("volume-step mute"), { locked = true })
 -- Cursor (caelestia's env.lua sets XCURSOR_* from hypr-vars)
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "24")
+
+-- Layout switch: Alt+Shift tapped on its own. XKB's grp:alt_shift_toggle
+-- fires the moment both are down, so Alt+Shift+letter and Ctrl+Alt+Shift
+-- chords flipped the layout too. A release bind on the modifier itself (the
+-- pattern caelestia uses for SUPER + SUPER_L) only fires when that modifier was
+-- the last key pressed, and the modmask must be exactly ALT + SHIFT, so any
+-- extra key or modifier cancels it. One bind per order the two are pressed in.
+for _, key in ipairs({ "Shift_L", "Shift_R", "Alt_L", "Alt_R" }) do
+  hl.bind("ALT + SHIFT + " .. key, hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), {
+    release = true,
+    description = "Switch keyboard layout",
+  })
+end
 
 -- Binds
 hl.bind("CTRL + ALT + Delete", hl.dsp.exit(), { description = "Exit Hyprland" })
