@@ -2,7 +2,7 @@
   "theme": {
     "enableTerm": false,
     "enableHypr": true,
-    "enableFuzzel": true,
+    "enableFuzzel": false,
     "enableGtk": true,
     "enableQt": true,
     "enableBtop": true,
