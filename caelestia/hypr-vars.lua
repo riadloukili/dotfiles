@@ -63,6 +63,11 @@ return {
   kbLock = "CTRL + ALT + L",
   kbShowSidebar = "SUPER + SHIFT + N",
 
+  -- Clipboard: the clip picker (SUPER+ALT+V, hypr-user.lua) replaces the
+  -- fuzzel pick and delete binds.
+  kbClipboard = "",
+  kbClipboardDel = "",
+
   -- Media: keyboard keys only (bound by caelestia regardless of these)
   kbMediaToggle = "",
   kbMediaNext = "",

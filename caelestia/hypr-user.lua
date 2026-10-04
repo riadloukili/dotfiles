@@ -87,6 +87,18 @@ for _, key in ipairs({ "Shift_L", "Shift_R", "Alt_L", "Alt_R" }) do
   })
 end
 
+-- Clipboard picker (~/.config/clip-picker): blurred behind its translucent
+-- panel the way caelestia's drawers are -- ignore_alpha just under the 0.85
+-- surface, so the empty rest of the overlay stays unblurred. It animates
+-- itself, so no layer animation on top.
+hl.layer_rule({ match = { namespace = "clip-picker" }, blur = true, ignore_alpha = 0.82, no_anim = true })
+
+-- SUPER+ALT+V toggles it: a running picker closes itself over IPC (with its
+-- animation), and the call fails when none is running, which starts one.
+hl.bind("SUPER + ALT + V", hl.dsp.exec_cmd(
+  "qs -p ~/.config/clip-picker ipc call picker toggle || qs -p ~/.config/clip-picker"
+), { description = "Clipboard history" })
+
 -- Binds
 hl.bind("CTRL + ALT + Delete", hl.dsp.exit(), { description = "Exit Hyprland" })
 hl.bind("SUPER + SHIFT + D", hl.dsp.global("caelestia:dashboard"), { description = "Dashboard" })
