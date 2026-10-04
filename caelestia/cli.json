@@ -14,6 +14,7 @@
     "enableHtop": false,
     "enableWarp": false,
     "enableChromium": false,
-    "enableZed": false
+    "enableZed": false,
+    "postHook": "tmux source-file ~/.config/tmux/tmux.conf >/dev/null 2>&1 || true"
   }
 }
