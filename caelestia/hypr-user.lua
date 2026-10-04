@@ -106,6 +106,30 @@ end
 hl.window_rule({ match = { class = "org.keepassxc.KeePassXC" }, float = true })
 hl.window_rule({ match = { class = "org.keepassxc.KeePassXC" }, center = true })
 
+-- Chromium's "<site> is sharing your screen." bar: a classless floating window
+-- that caelestia's centre-every-float rule puts in the middle of the screen,
+-- on top of whatever is being shown. Bottom centre instead, and without taking
+-- focus from the call when it appears. Stop sharing and Hide still work.
+--
+-- The move cannot be a rule: caelestia's center rule wins over move (and
+-- center = false does not undo it), so it is done after mapping, the way
+-- caelestia's execs.lua places picture-in-picture.
+hl.window_rule({ match = { class = "^$", title = ".* is sharing .*" }, float = true, no_initial_focus = true })
+
+hl.on("window.open", function(win)
+  if not (win and win.class == "" and win.size and win.title:find(" is sharing ", 1, true)) then
+    return
+  end
+  local m = hl.get_active_monitor()
+  local w, h = m.width / m.scale, m.height / m.scale
+  hl.dispatch(hl.dsp.window.move({
+    x = math.floor(m.x + (w - win.size.x) / 2),
+    y = math.floor(m.y + h * 0.97 - win.size.y),
+    relative = false,
+    window = win,
+  }))
+end)
+
 -- FreeCAD, in the spirit of caelestia's fusion360 rule: a CAD viewport is
 -- unreadable through the shell's transparency and blur, and the splash screen
 -- (titled just "FreeCAD", before the versioned main window appears) otherwise
