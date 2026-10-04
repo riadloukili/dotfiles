@@ -30,7 +30,7 @@ return {
   kbMoveWinToWsGroup = "",
   kbNextWsGroup = "",
   kbPrevWsGroup = "",
-  kbNextWs = { "SUPER + mouse_down", "SUPER + period", "SUPER + Tab" },
+  kbNextWs = { "SUPER + mouse_down", "SUPER + Tab" },
   kbPrevWs = { "SUPER + mouse_up", "SUPER + comma", "SUPER + SHIFT + Tab" },
   kbMoveWinToWsNext = "SUPER + SHIFT + bracketright",
   kbMoveWinToWsPrev = "SUPER + SHIFT + bracketleft",
