@@ -24,6 +24,7 @@ Singleton {
     readonly property color m3onSurface: c("onSurface", "#e4e1e7")
     readonly property color m3onSurfaceVariant: c("onSurfaceVariant", "#c6c5d1")
     readonly property color m3outline: c("outline", "#90909a")
+    readonly property color m3outlineVariant: c("outlineVariant", "#46464f")
     readonly property color m3primary: c("primary", "#bac3ff")
     readonly property color m3onPrimary: c("onPrimary", "#232c60")
     readonly property color m3secondaryContainer: c("secondaryContainer", "#42455c")

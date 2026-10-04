@@ -9,8 +9,9 @@
 // xdg-open; Ctrl+D deletes the highlighted entry. Ctrl+Shift+D enters delete
 // mode: Tab (or a click) marks, Ctrl+A marks everything shown, Enter deletes
 // what is marked and the picker stays open. Esc clears the search, then
-// leaves delete mode, then closes. Up/Down and Ctrl+J/K/N/P move. fzf's search
-// syntax works: 'exact ^start end$ !not a|b.
+// leaves delete mode, then closes. Up/Down and Ctrl+J/K/N/P move. Ctrl+H
+// shows or hides a line of these keys. fzf's search syntax works: 'exact
+// ^start end$ !not a|b.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -26,6 +27,7 @@ ShellRoot {
     property bool closing
 
     property bool deleteMode
+    property bool showHelp
     property var marked: ({}) // entry id -> true; replaced, never mutated, so bindings update
     readonly property int markedCount: Object.keys(marked).length
 
@@ -320,83 +322,114 @@ ShellRoot {
                     }
                 }
 
-                SearchBar {
-                    id: search
+                // The search bar, and under it the shortcuts (Ctrl+H), which
+                // grow and fade in rather than appear. Grouped without spacing so
+                // the hidden help leaves no gap below the bar.
+                Column {
 
-                    width: Theme.listWidth + Theme.padding.large + Theme.previewWidth
-                    deleteMode: root.deleteMode
-                    counter: {
-                        if (!root.entries.length)
-                            return "";
-                        const shown = `${list.count}/${root.entries.length}`;
-                        return root.deleteMode ? qsTr("%1 marked · %2").arg(root.markedCount).arg(shown) : shown;
+                    SearchBar {
+                        id: search
+
+                        width: Theme.listWidth + Theme.padding.large + Theme.previewWidth
+                        deleteMode: root.deleteMode
+                        counter: {
+                            if (!root.entries.length)
+                                return "";
+                            const shown = `${list.count}/${root.entries.length}`;
+                            return root.deleteMode ? qsTr("%1 marked · %2").arg(root.markedCount).arg(shown) : shown;
+                        }
+
+                        input.Keys.onPressed: event => {
+                            const ctrl = event.modifiers & Qt.ControlModifier;
+                            const shift = event.modifiers & Qt.ShiftModifier;
+                            const key = event.key;
+                            const enter = key === Qt.Key_Return || key === Qt.Key_Enter;
+
+                            if (key === Qt.Key_Down || ctrl && (key === Qt.Key_J || key === Qt.Key_N))
+                                list.incrementCurrentIndex();
+                            else if (key === Qt.Key_Up || ctrl && (key === Qt.Key_K || key === Qt.Key_P))
+                                list.decrementCurrentIndex();
+                            else if (key === Qt.Key_PageDown)
+                                list.currentIndex = Math.min(list.count - 1, list.currentIndex + Theme.maxShown);
+                            else if (key === Qt.Key_PageUp)
+                                list.currentIndex = Math.max(0, list.currentIndex - Theme.maxShown);
+                            else if (key === Qt.Key_Escape && search.text)
+                                search.input.clear(); // Esc: the search first, then delete mode, then the picker
+                            else if (key === Qt.Key_Escape && root.deleteMode)
+                                root.setDeleteMode(false);
+                            else if (key === Qt.Key_Escape)
+                                root.close();
+                            else if (ctrl && key === Qt.Key_H)
+                                root.showHelp = !root.showHelp;
+                            else if (ctrl && shift && key === Qt.Key_D)
+                                root.setDeleteMode(!root.deleteMode);
+                            else if (root.deleteMode && key === Qt.Key_Tab) {
+                                root.toggleMark(root.current);
+                                list.incrementCurrentIndex();
+                            } else if (root.deleteMode && key === Qt.Key_Backtab) {
+                                root.toggleMark(root.current);
+                                list.decrementCurrentIndex();
+                            } else if (root.deleteMode && ctrl && key === Qt.Key_A)
+                                root.markAllShown();
+                            else if (root.deleteMode && enter)
+                                root.remove(root.markedCount ? root.entries.filter(e => root.marked[e.id]) : [root.current]);
+                            else if (key === Qt.Key_Tab)
+                                list.incrementCurrentIndex();
+                            else if (key === Qt.Key_Backtab)
+                                list.decrementCurrentIndex();
+                            else if (enter)
+                                root.copy(root.current);
+                            else if (ctrl && key === Qt.Key_O)
+                                root.open(root.current);
+                            else if (ctrl && key === Qt.Key_D)
+                                root.remove([root.current]);
+                            else
+                                return;
+                            event.accepted = true;
+                        }
                     }
 
-                    input.Keys.onPressed: event => {
-                        const ctrl = event.modifiers & Qt.ControlModifier;
-                        const shift = event.modifiers & Qt.ShiftModifier;
-                        const key = event.key;
-                        const enter = key === Qt.Key_Return || key === Qt.Key_Enter;
+                    Item {
+                        id: help
 
-                        if (key === Qt.Key_Down || ctrl && (key === Qt.Key_J || key === Qt.Key_N))
-                            list.incrementCurrentIndex();
-                        else if (key === Qt.Key_Up || ctrl && (key === Qt.Key_K || key === Qt.Key_P))
-                            list.decrementCurrentIndex();
-                        else if (key === Qt.Key_PageDown)
-                            list.currentIndex = Math.min(list.count - 1, list.currentIndex + Theme.maxShown);
-                        else if (key === Qt.Key_PageUp)
-                            list.currentIndex = Math.max(0, list.currentIndex - Theme.maxShown);
-                        else if (key === Qt.Key_Escape && search.text)
-                            search.input.clear(); // Esc: the search first, then delete mode, then the picker
-                        else if (key === Qt.Key_Escape && root.deleteMode)
-                            root.setDeleteMode(false);
-                        else if (key === Qt.Key_Escape)
-                            root.close();
-                        else if (ctrl && shift && key === Qt.Key_D)
-                            root.setDeleteMode(!root.deleteMode);
-                        else if (root.deleteMode && key === Qt.Key_Tab) {
-                            root.toggleMark(root.current);
-                            list.incrementCurrentIndex();
-                        } else if (root.deleteMode && key === Qt.Key_Backtab) {
-                            root.toggleMark(root.current);
-                            list.decrementCurrentIndex();
-                        } else if (root.deleteMode && ctrl && key === Qt.Key_A)
-                            root.markAllShown();
-                        else if (root.deleteMode && enter)
-                            root.remove(root.markedCount ? root.entries.filter(e => root.marked[e.id]) : [root.current]);
-                        else if (key === Qt.Key_Tab)
-                            list.incrementCurrentIndex();
-                        else if (key === Qt.Key_Backtab)
-                            list.decrementCurrentIndex();
-                        else if (enter)
-                            root.copy(root.current);
-                        else if (ctrl && key === Qt.Key_O)
-                            root.open(root.current);
-                        else if (ctrl && key === Qt.Key_D)
-                            root.remove([root.current]);
-                        else
-                            return;
-                        event.accepted = true;
+                        width: search.width
+                        height: root.showHelp ? helpBar.implicitHeight + Theme.padding.large : 0
+                        opacity: root.showHelp ? 1 : 0
+                        clip: true
+
+                        Behavior on height {
+                            NumberAnimation {
+                                duration: Theme.effectsDuration * 1.5
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.emphasizedDecel
+                            }
+                        }
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: Theme.effectsDuration }
+                        }
+
+                        HelpBar {
+                            id: helpBar
+
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            items: root.deleteMode ? [
+                                { keys: ["Tab"], label: qsTr("mark") },
+                                { keys: ["Ctrl", "A"], label: qsTr("mark all shown") },
+                                { keys: ["Enter"], label: root.markedCount ? qsTr("delete %1 marked").arg(root.markedCount) : qsTr("delete highlighted") },
+                                { keys: ["Esc"], label: qsTr("back") },
+                                { keys: ["Ctrl", "H"], label: qsTr("hide help") }
+                            ] : [
+                                { keys: ["Enter"], label: qsTr("copy") },
+                                { keys: ["Ctrl", "O"], label: qsTr("open link or path") },
+                                { keys: ["Ctrl", "D"], label: qsTr("delete") },
+                                { keys: ["Ctrl", "Shift", "D"], label: qsTr("delete several") },
+                                { keys: ["Esc"], label: qsTr("close") },
+                                { keys: ["Ctrl", "H"], label: qsTr("hide help") }
+                            ]
+                        }
                     }
-                }
-
-                // What the keys do right now.
-                Label {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    textFormat: Text.StyledText
-                    color: Theme.m3outline
-                    pointSize: Theme.size.small
-
-                    function key(k: string): string {
-                        return `<font color="${Theme.m3onSurfaceVariant}"><b>${k}</b></font>`;
-                    }
-
-                    text: root.deleteMode
-                        ? [`${key("Tab")} mark`, `${key("Ctrl+A")} mark all shown`,
-                           root.markedCount ? `${key("Enter")} delete ${root.markedCount} marked` : `${key("Enter")} delete highlighted`,
-                           `${key("Esc")} back`].join("  ·  ")
-                        : [`${key("Enter")} copy`, `${key("Ctrl+O")} open link or path`, `${key("Ctrl+D")} delete`,
-                           `${key("Ctrl+Shift+D")} delete several`, `${key("Esc")} close`].join("  ·  ")
                 }
             }
 
