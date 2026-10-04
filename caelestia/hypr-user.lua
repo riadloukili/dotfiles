@@ -26,6 +26,14 @@ hl.config({
   },
 })
 
+-- SUPER+n on the workspace already shown goes back to the previous one.
+-- caelestia's wsaction ends in a plain workspace focus, which honours this.
+hl.config({
+  binds = {
+    workspace_back_and_forth = true,
+  },
+})
+
 -- Volume keys, with the change made audible. caelestia's keybinds.lua changes
 -- the level silently; volume-step (users/riad/home.nix) does the same wpctl
 -- call and then plays the freedesktop volume-change sound, but only when the
