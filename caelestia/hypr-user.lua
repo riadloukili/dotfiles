@@ -59,6 +59,17 @@ hl.bind("XF86AudioLowerVolume",
 hl.unbind("XF86AudioMute")
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("volume-step mute"), { locked = true })
 
+-- Software cursor, so screen shares show it. xdg-desktop-portal-hyprland
+-- offers only the hidden and embedded cursor modes, so browsers (Teams, Meet)
+-- get the cursor only if Hyprland draws it into the captured frame -- and with
+-- the default auto/hardware cursor it does not, even when the capture asks for
+-- it (grim -c came back without it). Drawn in software it is part of the frame.
+hl.config({
+  cursor = {
+    no_hardware_cursors = 1,
+  },
+})
+
 -- Cursor (caelestia's env.lua sets XCURSOR_* from hypr-vars)
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "24")
