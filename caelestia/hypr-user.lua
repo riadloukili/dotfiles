@@ -99,6 +99,21 @@ hl.bind("SUPER + ALT + V", hl.dsp.exec_cmd(
   "qs -p ~/.config/clip-picker ipc call picker toggle || qs -p ~/.config/clip-picker"
 ), { description = "Clipboard history" })
 
+-- Shell kill/restart. caelestia's binds stop it with `qs -c caelestia kill`,
+-- which only finds a shell started as config "caelestia"; this one runs by
+-- store path (-p .../caelestia-shell/shell.qml), so the old shell survived and
+-- a restart left two, doubling the space reserved at the screen edges. Select
+-- instances by config path instead, from any generation, never the clip picker.
+local killShell = "qs list --all --json"
+  .. [[ | jq -r '.[] | select(.config_path | contains("-caelestia-shell-")) | .pid']]
+  .. " | xargs -r -n1 qs kill --pid"
+
+hl.unbind("CTRL + SUPER + SHIFT + R")
+hl.unbind("CTRL + SUPER + ALT + R")
+hl.bind("CTRL + SUPER + SHIFT + R", hl.dsp.exec_cmd(killShell), { release = true, description = "Kill shell" })
+hl.bind("CTRL + SUPER + ALT + R", hl.dsp.exec_cmd(killShell .. "; sleep .3; caelestia shell -d"),
+  { release = true, description = "Restart shell" })
+
 -- Binds
 hl.bind("CTRL + ALT + Delete", hl.dsp.exit(), { description = "Exit Hyprland" })
 hl.bind("SUPER + SHIFT + D", hl.dsp.global("caelestia:dashboard"), { description = "Dashboard" })
