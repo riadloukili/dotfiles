@@ -5,13 +5,14 @@
 //   qs -p ~/.config/clip-picker                    start it
 //   qs -p ~/.config/clip-picker ipc call picker toggle   close a running one
 //
-// Enter or click copies and closes; Ctrl+O opens a link or path with
-// xdg-open; Ctrl+D deletes the highlighted entry. Ctrl+Shift+D enters delete
-// mode: Tab (or a click) marks, Ctrl+A marks everything shown, Enter deletes
-// what is marked and the picker stays open. Esc clears the search, then
-// leaves delete mode, then closes. Up/Down and Ctrl+J/K/N/P move. Ctrl+H
-// shows or hides a line of these keys. fzf's search syntax works: 'exact
-// ^start end$ !not a|b.
+// Enter or click copies and closes. Ctrl+O opens with xdg-open: a path, a
+// link, or the link in a text -- asking which when it holds several. Ctrl+E
+// sends a copy to swappy (images) or $EDITOR (text), the entry untouched.
+// Ctrl+D deletes the highlighted entry; Ctrl+Shift+D enters delete mode: Tab
+// (or a click) marks, Ctrl+A marks everything shown, Enter deletes what is
+// marked and the picker stays open. Esc clears the search, then leaves delete
+// mode, then closes. Up/Down and Ctrl+J/K/N/P move. Ctrl+H shows or hides a
+// line of these keys. fzf's search syntax works: 'exact ^start end$ !not a|b.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -63,7 +64,7 @@ ShellRoot {
         return {
             id, line, text,
             image: null,
-            openable: link || path,
+            openable: link || path || /(https?|ftp|file):\/\/\S/.test(text),
             icon: link ? "link" : path ? "folder" : "notes",
             detail: link ? qsTr("Link") : path ? qsTr("Path") : qsTr("Text")
         };
@@ -83,19 +84,73 @@ ShellRoot {
         close();
     }
 
+    // Ctrl+O. cliphist list cuts text at 100 characters, so the whole entry
+    // is decoded first: if it is a single path, that opens; otherwise every
+    // link in it is collected (in order, once each, trailing punctuation
+    // stripped) and one opens directly, several bring up the link menu.
+    function open(entry: var): void {
+        if (!entry || entry.image || linkFinder.running)
+            return;
+        linkFinder.command = ["sh", "-c", `
+            t=$(printf "%s" "$1" | cliphist decode)
+            s=$(printf "%s" "$t" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            case $s in
+                "~" | "~/"* | /*)
+                    if [ "$(printf "%s" "$s" | wc -l)" -eq 0 ]; then
+                        printf 'path\t%s\n' "$s"
+                        exit 0
+                    fi ;;
+            esac
+            printf "%s" "$t" | grep -oE '(https?|ftp|file)://[^[:space:]<>"]+' |
+                sed -E 's/[].,;:!?)}>]+$//' | awk '!seen[$0]++' | sed 's/^/url\t/'`, "sh", entry.line];
+        linkFinder.running = true;
+    }
+
+    function foundLinks(out: string): void {
+        const found = out.split("\n").filter(l => l.includes("\t")).map(l => {
+            const tab = l.indexOf("\t");
+            return { kind: l.slice(0, tab), target: l.slice(tab + 1) };
+        });
+        if (!found.length)
+            Quickshell.execDetached(["notify-send", "-a", "Clipboard", "Nothing to open", "No link or path in this entry"]);
+        else if (found.length === 1)
+            openTarget(found[0].kind, found[0].target);
+        else
+            linkMenu.links = found.map(f => f.target);
+    }
+
     // Links go straight to xdg-open; paths (~ expanded) only if they exist,
     // with a notification otherwise rather than xdg-open's silent failure.
-    function open(entry: var): void {
-        if (!entry?.openable)
-            return;
+    function openTarget(kind: string, target: string): void {
         Quickshell.execDetached(["sh", "-c", `
-            t=$(printf "%s" "$1" | cliphist decode | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            t=$1
             case $t in "~" | "~/"*) t="$HOME\${t#"~"}" ;; esac
-            case $t in
-                *://*) ;;
-                *) [ -e "$t" ] || { notify-send -a Clipboard "Nothing to open" "$t does not exist"; exit 1; } ;;
-            esac
-            exec xdg-open "$t"`, "sh", entry.line]);
+            if [ "$2" = path ] && [ ! -e "$t" ]; then
+                notify-send -a Clipboard "Nothing to open" "$t does not exist"
+                exit 1
+            fi
+            exec xdg-open "$t"`, "sh", target, kind]);
+        close();
+    }
+
+    // Send a throwaway copy out: images to swappy, text to $VISUAL/$EDITOR (a
+    // terminal editor, run in kitty). The entry itself is never changed --
+    // "send", not "edit", says so; keeping a changed version means copying it
+    // from swappy or the editor. The script waits for the window to close and
+    // then deletes the temp file, so it is detached from the picker, which
+    // closes right away.
+    function sendToEditor(entry: var): void {
+        if (!entry)
+            return;
+        const ext = entry.image ? entry.image.format : "txt";
+        const open = entry.image
+            ? 'swappy -f "$f"'
+            : 'kitty --class clip-picker-editor -e ${VISUAL:-${EDITOR:-nvim}} "$f"';
+        Quickshell.execDetached(["sh", "-c", `
+            f=$(mktemp -p "\${XDG_RUNTIME_DIR:-/tmp}" --suffix=".$2" clip-picker-copy.XXXXXX) || exit 1
+            trap 'rm -f "$f"' EXIT
+            printf "%s" "$1" | cliphist decode >"$f"
+            ${open}`, "sh", entry.line, ext]);
         close();
     }
 
@@ -166,6 +221,14 @@ ShellRoot {
                     casing: "smart-case"
                 });
             }
+        }
+    }
+
+    Process {
+        id: linkFinder
+
+        stdout: StdioCollector {
+            onStreamFinished: root.foundLinks(text)
         }
     }
 
@@ -345,6 +408,13 @@ ShellRoot {
                             const key = event.key;
                             const enter = key === Qt.Key_Return || key === Qt.Key_Enter;
 
+                            // The link menu, while it is up, takes every key (LinkMenu.handleKey).
+                            if (linkMenu.shown) {
+                                linkMenu.handleKey(event);
+                                event.accepted = true;
+                                return;
+                            }
+
                             if (key === Qt.Key_Down || ctrl && (key === Qt.Key_J || key === Qt.Key_N))
                                 list.incrementCurrentIndex();
                             else if (key === Qt.Key_Up || ctrl && (key === Qt.Key_K || key === Qt.Key_P))
@@ -379,7 +449,9 @@ ShellRoot {
                                 list.decrementCurrentIndex();
                             else if (enter)
                                 root.copy(root.current);
-                            else if (ctrl && key === Qt.Key_O)
+                            else if (ctrl && key === Qt.Key_E)
+                            root.sendToEditor(root.current);
+                        else if (ctrl && key === Qt.Key_O)
                                 root.open(root.current);
                             else if (ctrl && key === Qt.Key_D)
                                 root.remove([root.current]);
@@ -413,6 +485,7 @@ ShellRoot {
                             id: helpBar
 
                             anchors.horizontalCenter: parent.horizontalCenter
+                            maxWidth: search.width - Theme.padding.large * 2
                             anchors.bottom: parent.bottom
                             items: root.deleteMode ? [
                                 { keys: ["Tab"], label: qsTr("mark") },
@@ -423,6 +496,7 @@ ShellRoot {
                             ] : [
                                 { keys: ["Enter"], label: qsTr("copy") },
                                 { keys: ["Ctrl", "O"], label: qsTr("open link or path") },
+                                { keys: ["Ctrl", "E"], label: root.current?.image ? qsTr("send to swappy") : qsTr("send to editor") },
                                 { keys: ["Ctrl", "D"], label: qsTr("delete") },
                                 { keys: ["Ctrl", "Shift", "D"], label: qsTr("delete several") },
                                 { keys: ["Esc"], label: qsTr("close") },
@@ -431,6 +505,16 @@ ShellRoot {
                         }
                     }
                 }
+            }
+
+            LinkMenu {
+                id: linkMenu
+
+                anchors.fill: parent
+                returnFocusTo: search.input
+                showHelp: root.showHelp
+                onChosen: url => root.openTarget("url", url)
+                onHelpToggled: root.showHelp = !root.showHelp
             }
 
             Component.onCompleted: showAnim.start()

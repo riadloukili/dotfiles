@@ -9,6 +9,7 @@ Rectangle {
     property alias text: input.text
     property string counter
     property bool deleteMode
+    property string placeholder: qsTr("Search clipboard")
 
     implicitHeight: input.implicitHeight + 14 * 2
     radius: height / 2
@@ -46,7 +47,7 @@ Rectangle {
 
         Label {
             anchors.fill: parent
-            text: root.deleteMode ? qsTr("Mark entries to delete") : qsTr("Search clipboard")
+            text: root.deleteMode ? qsTr("Mark entries to delete") : root.placeholder
             color: root.deleteMode ? Qt.alpha(Theme.m3error, 0.8) : Theme.m3outline
             opacity: input.text ? 0 : 1
 

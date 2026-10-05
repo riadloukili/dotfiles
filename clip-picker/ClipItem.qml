@@ -2,6 +2,7 @@
 // text with fzf's matched characters picked out, and a dimmer line under it.
 // In delete mode the icon becomes a checkbox and marked entries turn red.
 import QtQuick
+import "markup.js" as Markup
 
 Item {
     id: root
@@ -16,26 +17,6 @@ Item {
     signal activated
 
     implicitHeight: Theme.itemHeight
-
-    // Escape for StyledText and wrap matched characters. Positions index the
-    // NFC-normalised UTF-16 string, which is what fzf.js matched against.
-    function highlighted(text: string, positions: var): string {
-        const hits = new Set(positions);
-        const chars = text.normalize().split("");
-        const esc = ch => ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch;
-        let out = "";
-        let open = false;
-        for (let i = 0; i < chars.length; i++) {
-            const hit = hits.has(i);
-            if (hit && !open)
-                out += `<font color="${Theme.m3primary}"><b>`;
-            else if (!hit && open)
-                out += "</b></font>";
-            open = hit;
-            out += esc(chars[i]);
-        }
-        return open ? out + "</b></font>" : out;
-    }
 
     Rectangle {
         anchors.fill: parent
@@ -89,7 +70,7 @@ Item {
 
         Label {
             width: parent.width
-            text: root.entry.image ? root.entry.title : root.highlighted(root.entry.text, root.modelData.positions)
+            text: root.entry.image ? root.entry.title : Markup.highlighted(root.entry.text, root.modelData.positions, Theme.m3primary)
             textFormat: root.entry.image ? Text.PlainText : Text.StyledText
             font.strikeout: root.marked
             opacity: root.marked ? 0.7 : 1
